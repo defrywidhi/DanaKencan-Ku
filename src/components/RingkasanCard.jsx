@@ -8,7 +8,8 @@ export default function RingkasanCard({
   isCheatDay,
   saldoEndapan,
   ringkasanKategori,
-  onTutupSesi
+  onTutupSesi,
+  isSaving
 }) {
   return (
     <div style={{ backgroundColor: '#1f2937', color: 'white', padding: '20px', borderRadius: '8px', marginTop: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.2)' }}>
@@ -30,30 +31,48 @@ export default function RingkasanCard({
         </div>
       )}
 
-      {/* RINCIAN ANGKA */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-        <span>Total Urunan:</span>
-        <span>Rp {totalUrunan.toLocaleString('id-ID')}</span>
-      </div>
-      {isCheatDay && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px', color: '#fcd34d' }}>
-          <span>+ Ekstra Budget:</span>
-          <span>Rp {saldoEndapan.toLocaleString('id-ID')}</span>
-        </div>
+      {/* --- (DIUBAH) LOGIKA TAMPILAN BERDASARKAN MODE --- */}
+      {isCheatDay ? (
+        /* TAMPILAN MODE CHEAT DAY */
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', color: '#fcd34d' }}>
+            <span>Total Dana (Urunan + Endapan):</span>
+            <span>Rp {(totalUrunan + saldoEndapan).toLocaleString('id-ID')}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', color: '#f87171' }}>
+            <span>Total Pengeluaran:</span>
+            <span>- Rp {totalPengeluaran.toLocaleString('id-ID')}</span>
+          </div>
+          
+          <hr style={{ margin: '15px 0', borderColor: '#4b5563' }} />
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', fontWeight: 'bold', color: proyeksiSaldoAkhir < 0 ? '#f87171' : '#34d399' }}>
+            <span>Proyeksi Saldo Akhir:</span>
+            <span>Rp {proyeksiSaldoAkhir.toLocaleString('id-ID')}</span>
+          </div>
+        </>
+      ) : (
+        /* TAMPILAN MODE NORMAL (Seperti biasa) */
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+            <span>Total Urunan:</span>
+            <span>Rp {totalUrunan.toLocaleString('id-ID')}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', color: '#f87171' }}>
+            <span>Total Pengeluaran:</span>
+            <span>- Rp {totalPengeluaran.toLocaleString('id-ID')}</span>
+          </div>
+          
+          <hr style={{ margin: '15px 0', borderColor: '#4b5563' }} />
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', fontWeight: 'bold', color: sisaHariIni < 0 ? '#f87171' : '#34d399' }}>
+            <span>{sisaHariIni < 0 ? 'Defisit Hari Ini:' : 'Sisa (Masuk Endapan):'}</span>
+            <span>Rp {sisaHariIni.toLocaleString('id-ID')}</span>
+          </div>
+        </>
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', color: '#f87171' }}>
-        <span>Total Pengeluaran:</span>
-        <span>- Rp {totalPengeluaran.toLocaleString('id-ID')}</span>
-      </div>
       
-      <hr style={{ margin: '15px 0', borderColor: '#4b5563' }} />
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', fontWeight: 'bold', color: sisaHariIni < 0 ? '#f87171' : '#34d399' }}>
-        <span>{sisaHariIni < 0 ? 'Defisit Hari Ini:' : 'Sisa (Masuk Endapan):'}</span>
-        <span>Rp {sisaHariIni.toLocaleString('id-ID')}</span>
-      </div>
-      
-      {/* LOGIKA PERINGATAN */}
+      {/* --- LOGIKA PERINGATAN --- */}
       {!isCheatDay && sisaHariIni < 0 && (
         <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '4px', fontSize: '14px' }}>
           ⚠️ <strong>Perhatian:</strong> Pengeluaran melebihi urunan. Defisit ini memotong Endapan.
@@ -68,9 +87,10 @@ export default function RingkasanCard({
       {/* TOMBOL TUTUP SESI */}
       <button 
         onClick={onTutupSesi}
-        style={{ width: '100%', padding: '12px', marginTop: '20px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
+        disabled={isSaving}
+        style={{ width: '100%', padding: '12px', marginTop: '20px', backgroundColor: isSaving ? '#6ee7b7' : '#10b981', color: 'white', border: 'none', borderRadius: '6px', fontSize: '16px', fontWeight: 'bold', cursor: isSaving ? 'not-allowed' : 'pointer' }}
       >
-        Tutup Sesi & Simpan ke Endapan
+        {isSaving ? '⏳ Menyimpan ke Database...' : 'Tutup Sesi & Simpan'}
       </button>
     </div>
   );

@@ -24,8 +24,16 @@ function App() {
   // --- 3. DERIVED STATE (Perhitungan Otomatis) ---
   const totalUrunan = urunanCowok + urunanCewek;
   const totalPengeluaran = pengeluaran.reduce((total, item) => total + item.harga, 0);
-  const sisaHariIni = totalUrunan - totalPengeluaran;
-  const proyeksiSaldoAkhir = saldoEndapan + sisaHariIni;
+  
+  // (DIUBAH) Logika 'Sisa Hari Ini' sekarang cerdas menyesuaikan mode
+  const sisaHariIni = isCheatDay 
+    ? (saldoEndapan + totalUrunan) - totalPengeluaran 
+    : totalUrunan - totalPengeluaran;
+
+  // (DIUBAH) Saldo akhir mengikuti logika sisa hari ini
+  const proyeksiSaldoAkhir = isCheatDay 
+    ? sisaHariIni // Di Cheat Day, sisa uang gabungan otomatis menjadi saldo akhir baru
+    : saldoEndapan + sisaHariIni; // Di Normal, endapan lama ditambah sisa/defisit hari ini
 
   const ringkasanKategori = pengeluaran.reduce((acc, item) => {
     if (!acc[item.kategori]) acc[item.kategori] = 0;
@@ -33,20 +41,66 @@ function App() {
     return acc;
   }, {});
 
+  // (BARU) State loading
+  const [isSaving, setIsSaving] = useState(false); // (BARU) State loading
+
   // --- 4. FUNGSI AKSI ---
   const handleTambahPengeluaran = (itemBaru) => {
     setPengeluaran([...pengeluaran, itemBaru]);
   };
 
-  const handleTutupSesi = () => {
-    const yakin = window.confirm("Tutup sesi hari ini?");
+  // (DIUBAH) Tambahkan kata kunci 'async' karena kita akan menghubungi internet
+  const handleTutupSesi = async () => {
+    const yakin = window.confirm("Tutup sesi hari ini dan simpan ke Database?");
     if (!yakin) return; 
 
-    setSaldoEndapan(proyeksiSaldoAkhir);
-    setUrunanCowok(0);
-    setUrunanCewek(0);
-    setPengeluaran([]);
-    setIsCheatDay(false);
+    // 1. Mulai animasi loading
+    setIsSaving(true);
+
+    // 2. Siapkan data persis seperti yang diharapkan Apps Script
+    const payloadData = {
+      isCheatDay: isCheatDay,
+      saldoEndapanAwal: saldoEndapan, // <--- (BARU) Kirim saldo sebelum ditutup
+      urunanCowok: urunanCowok,
+      urunanCewek: urunanCewek,
+      totalPengeluaran: totalPengeluaran,
+      sisaHariIni: sisaHariIni,
+      saldoEndapanBaru: proyeksiSaldoAkhir,
+      pengeluaran: pengeluaran
+    };
+
+    try {
+      // 3. Mengirim data (API Call menggunakan fetch)
+      // Trik Apps Script: Kita pakai text/plain agar tidak terkena error CORS block di browser
+      const response = await fetch(import.meta.env.VITE_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8', 
+        },
+        body: JSON.stringify(payloadData)
+      });
+
+      const result = await response.json();
+
+      if (result.status === "sukses") {
+        // 4. Jika sukses disimpan di database, baru kita ubah state lokal (reset)
+        setSaldoEndapan(proyeksiSaldoAkhir);
+        setUrunanCowok(0);
+        setUrunanCewek(0);
+        setPengeluaran([]);
+        setIsCheatDay(false);
+        alert("✅ Data berhasil disimpan ke Google Sheets!");
+      } else {
+        alert("❌ Gagal menyimpan: " + result.pesan);
+      }
+    } catch (error) {
+      // Menangkap error jika internet mati atau URL salah
+      console.error(error);
+      alert("❌ Terjadi kesalahan jaringan. Cek koneksi internet Anda.");
+    } finally {
+      // 5. Matikan animasi loading apapun yang terjadi (sukses/gagal)
+      setIsSaving(false);
+    }
   };
 
   // --- 5. TAMPILAN (UI) ---
@@ -85,6 +139,7 @@ function App() {
         saldoEndapan={saldoEndapan}
         ringkasanKategori={ringkasanKategori}
         onTutupSesi={handleTutupSesi}
+        isSaving={isSaving} 
       />
     </div>
   );
