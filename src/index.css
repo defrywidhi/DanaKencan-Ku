@@ -9,5 +9,84 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   background-color: #f3f4f6;
   color: #1f2937;
+  padding: 15px; /* Jarak aman dari pinggir layar HP */
+}
+
+.app-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding-bottom: 50px;
+}
+
+/* --- Desain Kartu (Lebih melengkung & elegan) --- */
+.card {
+  background-color: white;
   padding: 20px;
+  border-radius: 12px;
+  margin-top: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.card-dark {
+  background-color: #1f2937;
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.card-highlight {
+  background-color: #f59e0b;
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+/* --- Desain Input & Tombol --- */
+.input-field {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px; /* Wajib 16px agar tidak auto-zoom di iOS */
+  margin-top: 5px;
+  outline: none;
+}
+.input-field:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+}
+
+.btn {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:active {
+  transform: scale(0.97); /* Efek tombol tertekan */
+}
+.btn-primary {
+  background-color: #2563eb;
+  color: white;
+}
+
+/* --- Tata Letak Responsif --- */
+.flex-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* MEDIA QUERY: Jika layar lebih kecil dari 480px (Layar HP), ubah susunan dari menyamping jadi ke bawah */
+@media (max-width: 480px) {
+  .flex-row-mobile-col {
+    flex-direction: column;
+  }
+  .card {
+    padding: 15px; /* Kartu sedikit mengecil di HP */
+  }
 }

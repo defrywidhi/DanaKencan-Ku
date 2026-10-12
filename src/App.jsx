@@ -104,43 +104,22 @@ function App() {
   };
 
   // --- 5. TAMPILAN (UI) ---
+  // Bagian bawah src/App.jsx
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', paddingBottom: '50px' }}>
+    <div className="app-container">
       <h1>Aplikasi Dana Kencan 💸</h1>
 
-      {/* KARTU ENDAPAN GLOBAL */}
-      <div style={{ backgroundColor: '#f59e0b', color: 'white', padding: '20px', borderRadius: '8px', marginTop: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+      <div className="card-highlight">
         <h2 style={{ fontSize: '16px', fontWeight: 'normal', margin: 0 }}>Total Saldo Endapan Saat Ini</h2>
         <div style={{ fontSize: '32px', fontWeight: 'bold', marginTop: '5px' }}>
           Rp {saldoEndapan.toLocaleString('id-ID')}
         </div>
       </div>
       
-      <UrunanCard 
-        isCheatDay={isCheatDay}
-        setIsCheatDay={setIsCheatDay}
-        urunanCowok={urunanCowok}
-        setUrunanCowok={setUrunanCowok}
-        urunanCewek={urunanCewek}
-        setUrunanCewek={setUrunanCewek}
-      />
-
-      <PengeluaranCard 
-        pengeluaran={pengeluaran} 
-        onTambahPengeluaran={handleTambahPengeluaran} 
-      />
-
-      <RingkasanCard 
-        totalUrunan={totalUrunan}
-        totalPengeluaran={totalPengeluaran}
-        sisaHariIni={sisaHariIni}
-        proyeksiSaldoAkhir={proyeksiSaldoAkhir}
-        isCheatDay={isCheatDay}
-        saldoEndapan={saldoEndapan}
-        ringkasanKategori={ringkasanKategori}
-        onTutupSesi={handleTutupSesi}
-        isSaving={isSaving} 
-      />
+      {/* ... pemanggilan komponen lain tetap sama persis ... */}
+      <UrunanCard isCheatDay={isCheatDay} setIsCheatDay={setIsCheatDay} urunanCowok={urunanCowok} setUrunanCowok={setUrunanCowok} urunanCewek={urunanCewek} setUrunanCewek={setUrunanCewek} />
+      <PengeluaranCard pengeluaran={pengeluaran} onTambahPengeluaran={handleTambahPengeluaran} />
+      <RingkasanCard totalUrunan={totalUrunan} totalPengeluaran={totalPengeluaran} sisaHariIni={sisaHariIni} proyeksiSaldoAkhir={proyeksiSaldoAkhir} isCheatDay={isCheatDay} saldoEndapan={saldoEndapan} ringkasanKategori={ringkasanKategori} onTutupSesi={handleTutupSesi} isSaving={isSaving} />
     </div>
   );
 }
