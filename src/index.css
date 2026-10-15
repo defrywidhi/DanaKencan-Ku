@@ -1,4 +1,5 @@
-/* src/index.css */
+/* src/index.css (Ubah bagian yang relevan atau timpa seluruhnya) */
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -7,9 +8,9 @@
 
 body {
   font-family: system-ui, -apple-system, sans-serif;
-  background-color: #f3f4f6;
-  color: #1f2937;
-  padding: 15px; /* Jarak aman dari pinggir layar HP */
+  background-color: #fffaf9; /* (DIUBAH) Sedikit lebih hangat (cream) menyelaraskan latar logo */
+  color: #1e293b;
+  padding: 15px;
 }
 
 .app-container {
@@ -18,17 +19,16 @@ body {
   padding-bottom: 50px;
 }
 
-/* --- Desain Kartu (Lebih melengkung & elegan) --- */
 .card {
   background-color: white;
   padding: 20px;
   border-radius: 12px;
   margin-top: 20px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
 }
 
 .card-dark {
-  background-color: #1f2937;
+  background-color: #1e3a8a; /* (DIUBAH) Biru tua elegan sesuai teks "DanaKencan" */
   color: white;
   padding: 20px;
   border-radius: 12px;
@@ -37,26 +37,26 @@ body {
 }
 
 .card-highlight {
-  background-color: #f59e0b;
+  /* (DIUBAH) Menggunakan gradasi Pink ke Oranye persis seperti ikon Hati & Panah di logo */
+  background: linear-gradient(135deg, #f43f5e, #f97316);
   color: white;
   padding: 20px;
   border-radius: 12px;
   margin-top: 20px;
 }
 
-/* --- Desain Input & Tombol --- */
 .input-field {
   width: 100%;
   padding: 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
-  font-size: 16px; /* Wajib 16px agar tidak auto-zoom di iOS */
+  font-size: 16px;
   margin-top: 5px;
   outline: none;
 }
 .input-field:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+  border-color: #2b50c7; /* Biru logo */
+  box-shadow: 0 0 0 2px rgba(43, 80, 199, 0.2);
 }
 
 .btn {
@@ -68,25 +68,23 @@ body {
   cursor: pointer;
 }
 .btn:active {
-  transform: scale(0.97); /* Efek tombol tertekan */
+  transform: scale(0.97);
 }
 .btn-primary {
-  background-color: #2563eb;
+  background-color: #2b50c7; /* (DIUBAH) Biru logo yang lebih pekat */
   color: white;
 }
 
-/* --- Tata Letak Responsif --- */
 .flex-row {
   display: flex;
   gap: 10px;
 }
 
-/* MEDIA QUERY: Jika layar lebih kecil dari 480px (Layar HP), ubah susunan dari menyamping jadi ke bawah */
 @media (max-width: 480px) {
   .flex-row-mobile-col {
     flex-direction: column;
   }
   .card {
-    padding: 15px; /* Kartu sedikit mengecil di HP */
+    padding: 15px;
   }
 }

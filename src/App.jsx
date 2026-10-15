@@ -1,127 +1,63 @@
 // src/App.jsx
-import { useState, useEffect } from 'react';
-import UrunanCard from './components/UrunanCard';
-import PengeluaranCard from './components/PengeluaranCard';
-import RingkasanCard from './components/RingkasanCard'; // <-- Import baru
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState } from 'react';
 
-function App() {
-  // --- 1. GLOBAL STATE ---
-  const [saldoEndapan, setSaldoEndapan] = useState(() => {
-    const saldoTersimpan = localStorage.getItem('SALDO_ENDAPAN');
-    return saldoTersimpan ? Number(saldoTersimpan) : 0;
+// Import semua halaman yang sudah kita buat
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Riwayat from './pages/Riwayat';
+
+export default function App() {
+  // State untuk mengecek apakah user sudah login (baca dari memori browser)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('IS_LOGGED_IN') === 'true';
   });
 
-  useEffect(() => {
-    localStorage.setItem('SALDO_ENDAPAN', saldoEndapan);
-  }, [saldoEndapan]);
-
-  // --- 2. LOCAL STATE ---
-  const [urunanCowok, setUrunanCowok] = useState(0);
-  const [urunanCewek, setUrunanCewek] = useState(0);
-  const [isCheatDay, setIsCheatDay] = useState(false); 
-  const [pengeluaran, setPengeluaran] = useState([]);
-
-  // --- 3. DERIVED STATE (Perhitungan Otomatis) ---
-  const totalUrunan = urunanCowok + urunanCewek;
-  const totalPengeluaran = pengeluaran.reduce((total, item) => total + item.harga, 0);
-  
-  // (DIUBAH) Logika 'Sisa Hari Ini' sekarang cerdas menyesuaikan mode
-  const sisaHariIni = isCheatDay 
-    ? (saldoEndapan + totalUrunan) - totalPengeluaran 
-    : totalUrunan - totalPengeluaran;
-
-  // (DIUBAH) Saldo akhir mengikuti logika sisa hari ini
-  const proyeksiSaldoAkhir = isCheatDay 
-    ? sisaHariIni // Di Cheat Day, sisa uang gabungan otomatis menjadi saldo akhir baru
-    : saldoEndapan + sisaHariIni; // Di Normal, endapan lama ditambah sisa/defisit hari ini
-
-  const ringkasanKategori = pengeluaran.reduce((acc, item) => {
-    if (!acc[item.kategori]) acc[item.kategori] = 0;
-    acc[item.kategori] += item.harga;
-    return acc;
-  }, {});
-
-  // (BARU) State loading
-  const [isSaving, setIsSaving] = useState(false); // (BARU) State loading
-
-  // --- 4. FUNGSI AKSI ---
-  const handleTambahPengeluaran = (itemBaru) => {
-    setPengeluaran([...pengeluaran, itemBaru]);
-  };
-
-  // (DIUBAH) Tambahkan kata kunci 'async' karena kita akan menghubungi internet
-  const handleTutupSesi = async () => {
-    const yakin = window.confirm("Tutup sesi hari ini dan simpan ke Database?");
-    if (!yakin) return; 
-
-    // 1. Mulai animasi loading
-    setIsSaving(true);
-
-    // 2. Siapkan data persis seperti yang diharapkan Apps Script
-    const payloadData = {
-      isCheatDay: isCheatDay,
-      saldoEndapanAwal: saldoEndapan, // <--- (BARU) Kirim saldo sebelum ditutup
-      urunanCowok: urunanCowok,
-      urunanCewek: urunanCewek,
-      totalPengeluaran: totalPengeluaran,
-      sisaHariIni: sisaHariIni,
-      saldoEndapanBaru: proyeksiSaldoAkhir,
-      pengeluaran: pengeluaran
-    };
-
-    try {
-      // 3. Mengirim data (API Call menggunakan fetch)
-      // Trik Apps Script: Kita pakai text/plain agar tidak terkena error CORS block di browser
-      const response = await fetch(import.meta.env.VITE_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8', 
-        },
-        body: JSON.stringify(payloadData)
-      });
-
-      const result = await response.json();
-
-      if (result.status === "sukses") {
-        // 4. Jika sukses disimpan di database, baru kita ubah state lokal (reset)
-        setSaldoEndapan(proyeksiSaldoAkhir);
-        setUrunanCowok(0);
-        setUrunanCewek(0);
-        setPengeluaran([]);
-        setIsCheatDay(false);
-        alert("✅ Data berhasil disimpan ke Google Sheets!");
-      } else {
-        alert("❌ Gagal menyimpan: " + result.pesan);
-      }
-    } catch (error) {
-      // Menangkap error jika internet mati atau URL salah
-      console.error(error);
-      alert("❌ Terjadi kesalahan jaringan. Cek koneksi internet Anda.");
-    } finally {
-      // 5. Matikan animasi loading apapun yang terjadi (sukses/gagal)
-      setIsSaving(false);
+  // Komponen Khusus (SATPAM): Melindungi rute rahasia
+  // Jika belum login, tendang kembali ke halaman /login
+  const ProtectedRoute = ({ children }) => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />;
     }
+    return children; // Jika aman, silakan masuk ke komponen yang diminta
   };
 
-  // --- 5. TAMPILAN (UI) ---
-  // Bagian bawah src/App.jsx
   return (
-    <div className="app-container">
-      <h1>Aplikasi Dana Kencan 💸</h1>
+    <BrowserRouter>
+      <Routes>
+        {/* Rute Publik */}
+        <Route path="/" element={<Landing />} />
+        
+        {/* Rute Login: Kita oper setIsAuthenticated agar Login.jsx bisa mengubah status di App.jsx */}
+        <Route 
+          path="/login" 
+          element={<Login setIsAuthenticated={setIsAuthenticated} />} 
+        />
+        
+        {/* Rute Rahasia: Dibungkus oleh Satpam (ProtectedRoute) */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
 
-      <div className="card-highlight">
-        <h2 style={{ fontSize: '16px', fontWeight: 'normal', margin: 0 }}>Total Saldo Endapan Saat Ini</h2>
-        <div style={{ fontSize: '32px', fontWeight: 'bold', marginTop: '5px' }}>
-          Rp {saldoEndapan.toLocaleString('id-ID')}
-        </div>
-      </div>
-      
-      {/* ... pemanggilan komponen lain tetap sama persis ... */}
-      <UrunanCard isCheatDay={isCheatDay} setIsCheatDay={setIsCheatDay} urunanCowok={urunanCowok} setUrunanCowok={setUrunanCowok} urunanCewek={urunanCewek} setUrunanCewek={setUrunanCewek} />
-      <PengeluaranCard pengeluaran={pengeluaran} onTambahPengeluaran={handleTambahPengeluaran} />
-      <RingkasanCard totalUrunan={totalUrunan} totalPengeluaran={totalPengeluaran} sisaHariIni={sisaHariIni} proyeksiSaldoAkhir={proyeksiSaldoAkhir} isCheatDay={isCheatDay} saldoEndapan={saldoEndapan} ringkasanKategori={ringkasanKategori} onTutupSesi={handleTutupSesi} isSaving={isSaving} />
-    </div>
+        {/* (BARU) Rute Riwayat juga harus dilindungi */}
+        <Route 
+          path="/riwayat" 
+          element={
+            <ProtectedRoute>
+              <Riwayat />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Rute Nyasar (404): Otomatis lempar kembali ke halaman depan */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
