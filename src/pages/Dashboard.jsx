@@ -53,6 +53,12 @@ export default function Dashboard() {
     const [pengeluaran, setPengeluaran] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
 
+    // (BARU) State Tanggal (Bawaan: Tanggal Hari Ini dengan format YYYY-MM-DD)
+    const [tanggalSesi, setTanggalSesi] = useState(() => {
+      const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+      return (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
+    });
+
   // --- 3. DERIVED STATE (Perhitungan Otomatis) ---
     const totalUrunan = urunanCowok + urunanCewek;
     const totalPengeluaran = pengeluaran.reduce((total, item) => total + item.harga, 0);
@@ -106,6 +112,7 @@ export default function Dashboard() {
     const payloadData = {
     action: "simpan",
     idSesi: idSesiUnik,
+    tanggalSesi: tanggalSesi,
     isCheatDay: isCheatDay,
     saldoEndapanAwal: saldoEndapan,
     urunanCowok: urunanCowok,
@@ -169,7 +176,7 @@ export default function Dashboard() {
     </div>
     
       {/* ... pemanggilan komponen lain tetap sama persis ... */}
-        <UrunanCard isCheatDay={isCheatDay} setIsCheatDay={setIsCheatDay} urunanCowok={urunanCowok} setUrunanCowok={setUrunanCowok} urunanCewek={urunanCewek} setUrunanCewek={setUrunanCewek} />
+        <UrunanCard isCheatDay={isCheatDay} setIsCheatDay={setIsCheatDay} urunanCowok={urunanCowok} setUrunanCowok={setUrunanCowok} urunanCewek={urunanCewek} setUrunanCewek={setUrunanCewek} tanggalSesi={tanggalSesi} setTanggalSesi={setTanggalSesi} />
         <PengeluaranCard pengeluaran={pengeluaran} onTambahPengeluaran={handleTambahPengeluaran} onHapusPengeluaran={handleHapusPengeluaranLokal} />
         <RingkasanCard totalUrunan={totalUrunan} totalPengeluaran={totalPengeluaran} sisaHariIni={sisaHariIni} proyeksiSaldoAkhir={proyeksiSaldoAkhir} isCheatDay={isCheatDay} saldoEndapan={saldoEndapan} ringkasanKategori={ringkasanKategori} onTutupSesi={handleTutupSesi} isSaving={isSaving} />
     </div>

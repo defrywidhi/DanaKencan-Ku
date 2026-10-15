@@ -1,14 +1,32 @@
 // src/components/UrunanCard.jsx
 
-export default function UrunanCard({ isCheatDay, setIsCheatDay, urunanCowok, setUrunanCowok, urunanCewek, setUrunanCewek }) {
+// (DIUBAH) Menerima props tanggalSesi dan setTanggalSesi
+export default function UrunanCard({ 
+  isCheatDay, setIsCheatDay, 
+  urunanCowok, setUrunanCowok, 
+  urunanCewek, setUrunanCewek,
+  tanggalSesi, setTanggalSesi 
+}) {
   
-  // --- FUNGSI HELPER FORMATTING ---
   const formatRp = (angka) => angka === 0 || !angka ? '' : angka.toLocaleString('id-ID');
-  const parseRp = (teks) => Number(teks.replace(/[^0-9]/g, '')); // Hanya ambil angka
+  const parseRp = (teks) => Number(teks.replace(/[^0-9]/g, ''));
 
   return (
     <div className="card">
-      <h2>1. Urunan Hari Ini</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>1. Urunan Hari Ini</h2>
+        
+        {/* (BARU) INPUT TANGGAL DI POJOK KANAN ATAS KARTU */}
+        <div>
+          <input 
+            type="date" 
+            className="input-field" 
+            value={tanggalSesi}
+            onChange={(e) => setTanggalSesi(e.target.value)}
+            style={{ marginTop: 0, padding: '8px', fontSize: '14px', width: 'auto' }}
+          />
+        </div>
+      </div>
       
       <div style={{ marginTop: '15px', padding: '12px', backgroundColor: isCheatDay ? '#fef08a' : '#f3f4f6', borderRadius: '8px' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
