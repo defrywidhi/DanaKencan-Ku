@@ -15,14 +15,15 @@ export default function Login({ setIsAuthenticated }) {
     setIsLoggingIn(true);
 
     try {
-      // Mengirim PIN ke Google Apps Script (Backend) untuk dicek
+      // Mengirim PIN ke Google Apps Script (Backend)
       const response = await fetch(import.meta.env.VITE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ 
           action: "login", 
           pin: pin 
-        })
+        }),
+        redirect: "follow" // <-- (BARU) Wajib untuk Google Apps Script
       });
       const result = await response.json();
 
