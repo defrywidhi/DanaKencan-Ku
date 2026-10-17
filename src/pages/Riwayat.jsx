@@ -116,14 +116,31 @@ export default function Riwayat() {
         </button>
       </div>
 
-      {/* --- KOTAK FILTER --- */}
+      {/* --- KOTAK FILTER & PENCARIAN --- */}
       <div className="card no-print laporan-utama" style={{ marginBottom: '20px', backgroundColor: '#f9fafb' }}>
         <h3 style={{ fontSize: '16px', marginBottom: '15px' }}>🔍 Cari & Filter</h3>
         <div className="flex-row flex-row-mobile-col">
-          <input type="text" placeholder="Cari barang / mode..." className="input-field" value={kataKunci} onChange={(e) => setKataKunci(e.target.value)} style={{ flex: 2 }} />
-          <div style={{ display: 'flex', gap: '10px', flex: 2 }}>
-            <input type="date" className="input-field" value={tanggalMulai} onChange={(e) => setTanggalMulai(e.target.value)} />
-            <input type="date" className="input-field" value={tanggalAkhir} onChange={(e) => setTanggalAkhir(e.target.value)} />
+          <input 
+            type="text" 
+            placeholder="Cari nama barang atau mode..." 
+            className="input-field" 
+            value={kataKunci}
+            onChange={(e) => setKataKunci(e.target.value)}
+          />
+          {/* (DIUBAH) Pastikan ada className flex-row-mobile-col di sini */}
+          <div className="flex-row flex-row-mobile-col" style={{ width: '100%' }}>
+            <input 
+              type="date" 
+              className="input-field" 
+              value={tanggalMulai}
+              onChange={(e) => setTanggalMulai(e.target.value)}
+            />
+            <input 
+              type="date" 
+              className="input-field" 
+              value={tanggalAkhir}
+              onChange={(e) => setTanggalAkhir(e.target.value)}
+            />
           </div>
         </div>
       </div>

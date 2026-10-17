@@ -29,16 +29,16 @@ export default function RingkasanCard({
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', color: '#fcd34d' }}>
             <span>Total Dana (Urunan + Endapan):</span>
-            <span>Rp {(totalUrunan + saldoEndapan).toLocaleString('id-ID')}</span>
+            <span className="nowrap">Rp {(totalUrunan + saldoEndapan).toLocaleString('id-ID')}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', color: '#fca5a5' }}>
             <span>Total Pengeluaran:</span>
             <span>- Rp {totalPengeluaran.toLocaleString('id-ID')}</span>
           </div>
           <hr style={{ margin: '15px 0', borderColor: '#4b5563' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', fontWeight: 'bold', color: proyeksiSaldoAkhir < 0 ? '#fca5a5' : '#34d399' }}>
-            <span>Proyeksi Saldo Akhir:</span>
-            <span>Rp {proyeksiSaldoAkhir.toLocaleString('id-ID')}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '20px', fontWeight: 'bold', color: proyeksiSaldoAkhir < 0 ? '#fca5a5' : '#34d399' }}>
+            <span style={{ marginRight: '10px' }}>Proyeksi Saldo Akhir:</span>
+            <span className="nowrap">Rp {proyeksiSaldoAkhir.toLocaleString('id-ID')}</span> {/* <-- Tambah nowrap */}
           </div>
         </>
       ) : (
@@ -52,9 +52,9 @@ export default function RingkasanCard({
             <span>- Rp {totalPengeluaran.toLocaleString('id-ID')}</span>
           </div>
           <hr style={{ margin: '15px 0', borderColor: '#4b5563' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', fontWeight: 'bold', color: sisaHariIni < 0 ? '#fca5a5' : '#34d399' }}>
-            <span>{sisaHariIni < 0 ? 'Defisit Hari Ini:' : 'Sisa (Masuk Endapan):'}</span>
-            <span>Rp {sisaHariIni.toLocaleString('id-ID')}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '20px', fontWeight: 'bold', color: sisaHariIni < 0 ? '#fca5a5' : '#34d399' }}>
+            <span style={{ marginRight: '10px', lineHeight: '1.2' }}>{sisaHariIni < 0 ? 'Defisit Hari Ini:' : 'Sisa (Masuk Endapan):'}</span>
+            <span className="nowrap">Rp {sisaHariIni.toLocaleString('id-ID')}</span> {/* <-- Tambah nowrap */}
           </div>
         </>
       )}

@@ -13,17 +13,16 @@ export default function UrunanCard({
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>1. Urunan Hari Ini</h2>
+      <div className="header-kartu-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ margin: 0 }}>1. Urunan Hari Ini</h2>
         
-        {/* (BARU) INPUT TANGGAL DI POJOK KANAN ATAS KARTU */}
-        <div>
+        <div style={{ width: '100%' }}> {/* Lebarkan pembungkus di mobile */}
           <input 
             type="date" 
             className="input-field" 
             value={tanggalSesi}
             onChange={(e) => setTanggalSesi(e.target.value)}
-            style={{ marginTop: 0, padding: '8px', fontSize: '14px', width: 'auto' }}
+            style={{ marginTop: 0, padding: '8px 12px', fontSize: '14px', width: '100%', maxWidth: '150px' }}
           />
         </div>
       </div>

@@ -204,8 +204,9 @@ export default function Dashboard() {
       {/* KARTU ENDAPAN GLOBAL */}
       <div className="card-highlight">
         <h2 style={{ fontSize: '16px', fontWeight: 'normal', margin: 0 }}>Total Saldo Endapan Saat Ini</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '5px' }}>
-          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
+          {/* (DIUBAH) Menggunakan className teks-saldo */}
+          <div className="teks-saldo">
             {isLoadingSaldo 
                 ? '⏳loading...' 
               : showSaldo 
@@ -213,7 +214,6 @@ export default function Dashboard() {
                 : 'Rp ••••••'
             }
           </div>
-          {/* Tombol Mata */}
           <button 
             onClick={() => setShowSaldo(!showSaldo)}
             style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer', opacity: 0.8 }}
