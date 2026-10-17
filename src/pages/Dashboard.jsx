@@ -110,71 +110,82 @@ export default function Dashboard() {
   };
 
   const handleTutupSesi = async () => {
-    const konfirmasi = await Swal.fire({
-      title: 'Tutup Sesi Hari Ini?',
-      text: "Sisa uang akan dimasukkan ke Saldo Endapan dan data akan disimpan ke Database.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#10b981',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Ya, Tutup & Simpan!',
-      cancelButtonText: 'Batal'
-    });
-
-    if (!konfirmasi.isConfirmed) return; 
-
-    setIsSaving(true);
-    const idSesiUnik = `SESI-${Date.now()}`;
-
-    const payloadData = {
-      action: "simpan",
-      idSesi: idSesiUnik,
-      tanggalSesi: tanggalSesi,
-      isCheatDay: isCheatDay,
-      saldoEndapanAwal: saldoEndapan,
-      urunanCowok: urunanCowok,
-      urunanCewek: urunanCewek,
-      totalPengeluaran: totalPengeluaran,
-      sisaHariIni: sisaHariIni,
-      saldoEndapanBaru: proyeksiSaldoAkhir,
-      pengeluaran: pengeluaran
-    };
-
-    try {
-      const response = await fetch(import.meta.env.VITE_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payloadData),
-        redirect: "follow"
+      const konfirmasi = await Swal.fire({
+        title: 'Tutup Sesi Hari Ini?',
+        text: "Sisa uang akan dimasukkan ke Saldo Endapan dan data akan disimpan ke Database.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Tutup & Simpan!',
+        cancelButtonText: 'Batal'
       });
 
-      const result = await response.json();
+      if (!konfirmasi.isConfirmed) return; 
 
-      if (result.status === "sukses") {
-        setSaldoEndapan(proyeksiSaldoAkhir);
-        setUrunanCowok(0);
-        setUrunanCewek(0);
-        setPengeluaran([]);
-        setIsCheatDay(false);
-        
-        // (BARU) BERSIHKAN DRAFT KARENA SUDAH SUKSES TERKIRIM
-        localStorage.removeItem('DRAFT_COWOK');
-        localStorage.removeItem('DRAFT_CEWEK');
-        localStorage.removeItem('DRAFT_CHEAT_DAY');
-        localStorage.removeItem('DRAFT_PENGELUARAN');
-        localStorage.removeItem('DRAFT_TANGGAL');
+      setIsSaving(true);
+      const idSesiUnik = `SESI-${Date.now()}`;
 
-        Swal.fire('Berhasil!', 'Data kencan berhasil disimpan ke Database.', 'success');
-      } else {
-        Swal.fire('Gagal!', 'Tidak dapat menyimpan: ' + result.pesan, 'error');
+      // --- (BARU) MENGUNCI LAYAR DENGAN LOADING ---
+      Swal.fire({
+        title: 'Menyimpan Data...',
+        html: 'Sedang mengirim data ke server Google.<br/><b>Jangan tutup halaman ini.</b>',
+        allowOutsideClick: false,
+        showConfirmButton: false, // Hilangkan tombol OK selama loading
+        didOpen: () => {
+          Swal.showLoading(); // Putar animasi loading
+        }
+      });
+
+      const payloadData = {
+        action: "simpan",
+        idSesi: idSesiUnik,
+        tanggalSesi: tanggalSesi,
+        isCheatDay: isCheatDay,
+        saldoEndapanAwal: saldoEndapan,
+        urunanCowok: urunanCowok,
+        urunanCewek: urunanCewek,
+        totalPengeluaran: totalPengeluaran,
+        sisaHariIni: sisaHariIni,
+        saldoEndapanBaru: proyeksiSaldoAkhir,
+        pengeluaran: pengeluaran
+      };
+
+      try {
+        const response = await fetch(import.meta.env.VITE_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payloadData),
+          redirect: "follow"
+        });
+
+        const result = await response.json();
+
+        if (result.status === "sukses") {
+          setSaldoEndapan(proyeksiSaldoAkhir);
+          setUrunanCowok(0);
+          setUrunanCewek(0);
+          setPengeluaran([]);
+          setIsCheatDay(false);
+          
+          localStorage.removeItem('DRAFT_COWOK');
+          localStorage.removeItem('DRAFT_CEWEK');
+          localStorage.removeItem('DRAFT_CHEAT_DAY');
+          localStorage.removeItem('DRAFT_PENGELUARAN');
+          localStorage.removeItem('DRAFT_TANGGAL');
+
+          // (DIUBAH) Loading sukses akan menimpa animasi loading sebelumnya
+          Swal.fire('Berhasil!', 'Data kencan berhasil disimpan ke Database.', 'success');
+        } else {
+          Swal.fire('Gagal!', 'Tidak dapat menyimpan: ' + result.pesan, 'error');
+        }
+      } catch (error) {
+        console.error(error);
+        Swal.fire('Error Jaringan', 'Periksa koneksi internet Anda.', 'error');
+      } finally {
+        setIsSaving(false);
       }
-    } catch (error) {
-      console.error(error);
-      Swal.fire('Error Jaringan', 'Periksa koneksi internet Anda.', 'error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    };
 
   // --- 5. TAMPILAN (UI) ---
   return (

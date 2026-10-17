@@ -13,7 +13,6 @@ export default function Riwayat() {
   const [isDeleting, setIsDeleting] = useState(false); 
   const [sesiTerpilih, setSesiTerpilih] = useState(null);
 
-  // --- (BARU) STATE UNTUK FILTER & PENCARIAN ---
   const [kataKunci, setKataKunci] = useState('');
   const [tanggalMulai, setTanggalMulai] = useState('');
   const [tanggalAkhir, setTanggalAkhir] = useState('');
@@ -39,38 +38,37 @@ export default function Riwayat() {
     fetchData();
   }, []);
 
-    const handleHapus = async (idSesi) => {
-    // (DIUBAH) Peringatan Hapus yang elegan
+  const handleHapus = async (idSesi) => {
     const konfirmasi = await Swal.fire({
-      title: 'Yakin ingin menghapus?',
-      text: "Data yang dihapus dari Database tidak bisa dikembalikan!",
+      title: 'Hapus Data?',
+      text: "Data yang dihapus tidak bisa dikembalikan!",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Ya, Hapus Permanen!'
+      confirmButtonText: 'Ya, Hapus!'
     });
-
     if (!konfirmasi.isConfirmed) return;
 
     setIsDeleting(true);
+    Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
     try {
       const response = await fetch(import.meta.env.VITE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "delete", idSesi: idSesi })
+        body: JSON.stringify({ action: "delete", idSesi: idSesi }),
+        redirect: "follow"
       });
       const result = await response.json();
-      
       if (result.status === "sukses") {
         setDataRiwayat(prev => prev.filter(item => item['ID Sesi'] !== idSesi));
         setDataDetail(prev => prev.filter(item => item['ID Sesi'] !== idSesi));
-        Swal.fire('Terhapus!', 'Data berhasil dihilangkan dari Database.', 'success');
+        Swal.fire('Terhapus!', 'Data berhasil dihilangkan.', 'success');
       } else {
-        Swal.fire('Gagal', 'Tidak bisa menghapus: ' + result.pesan, 'error');
+        Swal.fire('Gagal!', result.pesan, 'error');
       }
     } catch (err) {
-      Swal.fire('Error', 'Terjadi kesalahan jaringan.', 'error');
+      Swal.fire('Error', 'Kesalahan jaringan.', 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -78,14 +76,14 @@ export default function Riwayat() {
 
   const handleLihatDetail = (idSesi) => {
     const barangDiSesiIni = dataDetail.filter(item => item['ID Sesi'] === idSesi);
-    setSesiTerpilih({ id: idSesi, daftarBarang: barangDiSesiIni });
+    // Mencari info baris sesi ini untuk dimunculkan di kop struk
+    const infoSesi = dataRiwayat.find(item => item['ID Sesi'] === idSesi);
+    setSesiTerpilih({ id: idSesi, daftarBarang: barangDiSesiIni, info: infoSesi });
   };
 
   const handleCetakPDF = () => window.print();
 
-  // --- (BARU) DERIVED STATE: LOGIKA FILTERING ---
   const dataTampil = dataRiwayat.filter(baris => {
-    // 1. Filter Tanggal
     let masukFilterTanggal = true;
     if (tanggalMulai && tanggalAkhir && baris['Tanggal']) {
       const tglBaris = new Date(baris['Tanggal']).setHours(0,0,0,0);
@@ -93,113 +91,67 @@ export default function Riwayat() {
       const tglAkhir = new Date(tanggalAkhir).setHours(23,59,59,999);
       masukFilterTanggal = tglBaris >= tglMulai && tglBaris <= tglAkhir;
     }
-
-    // 2. Filter Pencarian Teks (Bisa cari dari nama barang juga)
     let masukFilterKataKunci = true;
     if (kataKunci) {
       const keyword = kataKunci.toLowerCase();
       const mode = (baris['Mode Cheat Day'] === 'Ya' ? 'cheat day' : 'normal');
-      
-      // Ambil nama semua barang di sesi ini untuk ikut dicari
       const barangSesiIni = dataDetail.filter(d => d['ID Sesi'] === baris['ID Sesi']);
       const textBarang = barangSesiIni.map(b => `${b['Nama Barang']} ${b['Kategori']}`).join(" ").toLowerCase();
-
       masukFilterKataKunci = mode.includes(keyword) || textBarang.includes(keyword);
     }
-
     return masukFilterTanggal && masukFilterKataKunci;
   });
 
   return (
-    <div className="app-container">
+    /* Menambahkan kelas khusus jika modal terbuka, agar PDF tahu apa yang harus dicetak */
+    <div className={`app-container ${sesiTerpilih ? 'modal-terbuka' : ''}`}>
+      
       {/* HEADER NAVIGASI */}
-      <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div className="no-print laporan-utama" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <button onClick={() => navigate('/dashboard')} className="btn" style={{ backgroundColor: '#e5e7eb', color: '#374151' }}>
           ⬅ Kembali
         </button>
-        <button onClick={handleCetakPDF} className="btn btn-primary">
-          🖨️ Cetak PDF
+        <button onClick={handleCetakPDF} className="btn btn-primary" style={{ backgroundColor: '#2b50c7' }}>
+          🖨️ Cetak Rekap PDF
         </button>
       </div>
 
-      {/* --- POP-UP (MODAL) DETAIL STRUK --- */}
-      {sesiTerpilih && (
-        <div className="no-print" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '400px', maxHeight: '80vh', overflowY: 'auto', marginTop: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px dashed #d1d5db', paddingBottom: '10px', marginBottom: '15px' }}>
-              <h3 style={{ margin: 0 }}>🧾 Detail Struk Belanja</h3>
-              <button onClick={() => setSesiTerpilih(null)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>❌</button>
-            </div>
-            {sesiTerpilih.daftarBarang.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#6b7280' }}>Tidak ada detail pengeluaran.</p>
-            ) : (
-              <ul style={{ listStyle: 'none', padding: 0 }}>
-                {sesiTerpilih.daftarBarang.map((barang, index) => (
-                  <li key={index} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f3f4f6' }}>
-                    <div>
-                      <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{barang['Nama Barang']}</div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{barang['Kategori']}</div>
-                    </div>
-                    <span style={{ fontWeight: '500' }}>Rp {Number(barang['Harga']).toLocaleString('id-ID')}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button onClick={() => setSesiTerpilih(null)} className="btn btn-primary" style={{ width: '100%', marginTop: '20px' }}>Tutup</button>
-          </div>
-        </div>
-      )}
-
-      {/* --- KOTAK FILTER & PENCARIAN --- */}
-      <div className="card no-print" style={{ marginBottom: '20px', backgroundColor: '#f9fafb' }}>
-        <h3 style={{ fontSize: '16px', marginBottom: '15px' }}>🔍 Filter Laporan</h3>
+      {/* --- KOTAK FILTER --- */}
+      <div className="card no-print laporan-utama" style={{ marginBottom: '20px', backgroundColor: '#f9fafb' }}>
+        <h3 style={{ fontSize: '16px', marginBottom: '15px' }}>🔍 Cari & Filter</h3>
         <div className="flex-row flex-row-mobile-col">
-          <input 
-            type="text" 
-            placeholder="Cari nama barang atau mode..." 
-            className="input-field" 
-            value={kataKunci}
-            onChange={(e) => setKataKunci(e.target.value)}
-            style={{ flex: 2 }}
-          />
+          <input type="text" placeholder="Cari barang / mode..." className="input-field" value={kataKunci} onChange={(e) => setKataKunci(e.target.value)} style={{ flex: 2 }} />
           <div style={{ display: 'flex', gap: '10px', flex: 2 }}>
-            <input 
-              type="date" 
-              className="input-field" 
-              value={tanggalMulai}
-              onChange={(e) => setTanggalMulai(e.target.value)}
-            />
-            <input 
-              type="date" 
-              className="input-field" 
-              value={tanggalAkhir}
-              onChange={(e) => setTanggalAkhir(e.target.value)}
-            />
+            <input type="date" className="input-field" value={tanggalMulai} onChange={(e) => setTanggalMulai(e.target.value)} />
+            <input type="date" className="input-field" value={tanggalAkhir} onChange={(e) => setTanggalAkhir(e.target.value)} />
           </div>
         </div>
       </div>
 
-      {/* TABEL DATA */}
-      <div className="card" style={{ marginTop: '0' }}>
+      {/* --- TABEL LAPORAN (RESPONSIF) --- */}
+      <div className="card laporan-utama" style={{ marginTop: '0' }}>
         <h2 style={{ marginBottom: '15px', textAlign: 'center' }}>Laporan Riwayat Sesi</h2>
 
-        {/* Info filter aktif saat PDF dicetak */}
         <div style={{ display: 'none' }} className="print-only">
-          <p>Filter: {tanggalMulai && tanggalAkhir ? `${tanggalMulai} s/d ${tanggalAkhir}` : 'Semua Waktu'}</p>
+          <h3 style={{ textAlign: 'center', margin: '0 0 10px' }}>DANAKENCAN-KU</h3>
+          <p style={{ textAlign: 'center', margin: '0 0 20px', borderBottom: '1px dashed black', paddingBottom: '10px' }}>
+            Rekap Transaksi: {tanggalMulai && tanggalAkhir ? `${tanggalMulai} s/d ${tanggalAkhir}` : 'Semua Waktu'}
+          </p>
         </div>
 
-        {isLoading && <p style={{ textAlign: 'center' }}>⏳ Memuat data...</p>}
+        {isLoading && <p style={{ textAlign: 'center' }}>⏳ Memuat data dari server...</p>}
         {error && <p style={{ textAlign: 'center', color: '#dc2626' }}>❌ {error}</p>}
         
         {!isLoading && !error && (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+          // (DIUBAH) Menghilangkan div overflow agar efek card mobile bekerja
+          <div>
+            <table className="responsive-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #d1d5db' }}>
                   <th style={{ padding: '12px', textAlign: 'left' }}>Tanggal</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>Mode</th>
-                  <th style={{ padding: '12px', textAlign: 'right' }}>Total Pengeluaran</th>
-                  <th style={{ padding: '12px', textAlign: 'right' }}>Sisa / Defisit</th>
+                  <th style={{ padding: '12px', textAlign: 'right' }}>Pengeluaran</th>
+                  <th style={{ padding: '12px', textAlign: 'right' }}>Sisa/Defisit</th>
                   <th style={{ padding: '12px', textAlign: 'right' }}>Saldo Akhir</th>
                   <th className="no-print" style={{ padding: '12px', textAlign: 'center' }}>Aksi</th>
                 </tr>
@@ -215,15 +167,17 @@ export default function Riwayat() {
                     const idBarisIni = baris['ID Sesi'];
 
                     return (
+                      // (DIUBAH) Menambahkan data-label untuk setiap TD agar tampil sebagai kartu di HP
                       <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '12px' }}>{tanggalRapi}</td>
-                        <td style={{ padding: '12px' }}>{baris['Mode Cheat Day'] === 'Ya' ? '👑 Cheat' : 'Normal'}</td>
-                        <td style={{ padding: '12px', textAlign: 'right', color: '#dc2626' }}>Rp {Number(baris['Total Pengeluaran']).toLocaleString('id-ID')}</td>
-                        <td style={{ padding: '12px', textAlign: 'right' }}>Rp {Number(baris['Sisa Hari Ini']).toLocaleString('id-ID')}</td>
-                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>Rp {Number(baris['Saldo Endapan Akhir']).toLocaleString('id-ID')}</td>
-                        <td className="no-print" style={{ padding: '12px', textAlign: 'center', display: 'flex', gap: '5px', justifyContent: 'center' }}>
-                          <button onClick={() => handleLihatDetail(idBarisIni)} disabled={!idBarisIni || isDeleting} className="btn" style={{ backgroundColor: (!idBarisIni) ? '#9ca3af' : '#2563eb', color: 'white', padding: '6px 10px', fontSize: '12px', cursor: (!idBarisIni) ? 'not-allowed' : 'pointer' }}>👁️ Lihat</button>
-                          <button onClick={() => handleHapus(idBarisIni)} disabled={!idBarisIni || isDeleting} className="btn" style={{ backgroundColor: (!idBarisIni || isDeleting) ? '#fca5a5' : '#ef4444', color: 'white', padding: '6px 10px', fontSize: '12px', cursor: (!idBarisIni || isDeleting) ? 'not-allowed' : 'pointer' }}>🗑️ Hapus</button>
+                        <td data-label="Tanggal :" style={{ padding: '12px' }}>{tanggalRapi}</td>
+                        <td data-label="Mode :" style={{ padding: '12px' }}>{baris['Mode Cheat Day'] === 'Ya' ? '👑 Cheat' : 'Normal'}</td>
+                        <td data-label="Total Keluar :" style={{ padding: '12px', textAlign: 'right', color: '#dc2626' }}>Rp {Number(baris['Total Pengeluaran']).toLocaleString('id-ID')}</td>
+                        <td data-label="Sisa Harian :" style={{ padding: '12px', textAlign: 'right' }}>Rp {Number(baris['Sisa Hari Ini']).toLocaleString('id-ID')}</td>
+                        <td data-label="Saldo Akhir :" style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>Rp {Number(baris['Saldo Endapan Akhir']).toLocaleString('id-ID')}</td>
+                        
+                        <td className="no-print aksi-buttons" style={{ padding: '12px', textAlign: 'center', display: 'flex', gap: '5px', justifyContent: 'center' }}>
+                          <button onClick={() => handleLihatDetail(idBarisIni)} disabled={!idBarisIni || isDeleting} className="btn" style={{ backgroundColor: (!idBarisIni) ? '#9ca3af' : '#2563eb', color: 'white', padding: '6px 12px', fontSize: '12px', flex: 1 }}>👁️ Struk</button>
+                          <button onClick={() => handleHapus(idBarisIni)} disabled={!idBarisIni || isDeleting} className="btn" style={{ backgroundColor: (!idBarisIni || isDeleting) ? '#fca5a5' : '#ef4444', color: 'white', padding: '6px 12px', fontSize: '12px', flex: 1 }}>🗑️ Hapus</button>
                         </td>
                       </tr>
                     );
@@ -235,14 +189,106 @@ export default function Riwayat() {
         )}
       </div>
 
+      {/* --- POP-UP MODAL (STRUK KASIR) --- */}
+      {sesiTerpilih && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className="card modal-content" style={{ width: '100%', maxWidth: '350px', maxHeight: '80vh', overflowY: 'auto', marginTop: 0, backgroundColor: 'white' }}>
+            
+            <div className="struk-header" style={{ textAlign: 'center', borderBottom: '2px dashed #d1d5db', paddingBottom: '15px', marginBottom: '15px' }}>
+              <img src="/logo-danakencan.jpg" alt="Logo" className="print-only-img" style={{ width: '60px', borderRadius: '8px', marginBottom: '10px' }} />
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '18px' }}>DANAKENCAN-KU</h3>
+              <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>Tanggal: {new Date(sesiTerpilih.info['Tanggal']).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#6b7280' }}>ID: {sesiTerpilih.id}</p>
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              {sesiTerpilih.daftarBarang.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px' }}>Tidak ada detail barang.</p>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {sesiTerpilih.daftarBarang.map((barang, index) => (
+                    <li key={index} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '14px' }}>
+                      <div style={{ width: '60%' }}>
+                        <div style={{ color: '#1f2937' }}>{barang['Nama Barang']}</div>
+                        <div style={{ fontSize: '10px', color: '#6b7280' }}>{barang['Kategori']}</div>
+                      </div>
+                      <span style={{ fontWeight: '500', textAlign: 'right' }}>
+                        {Number(barang['Harga']).toLocaleString('id-ID')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div style={{ borderTop: '2px dashed #d1d5db', paddingTop: '10px', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                <span>Total Urunan:</span>
+                <span>{Number(sesiTerpilih.info['Urunan Cowok'] + sesiTerpilih.info['Urunan Cewek']).toLocaleString('id-ID')}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontWeight: 'bold' }}>
+                <span>Total Belanja:</span>
+                <span>{Number(sesiTerpilih.info['Total Pengeluaran']).toLocaleString('id-ID')}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', color: '#6b7280', fontSize: '12px' }}>
+                <span>Saldo Endapan Akhir:</span>
+                <span>Rp {Number(sesiTerpilih.info['Saldo Endapan Akhir']).toLocaleString('id-ID')}</span>
+              </div>
+            </div>
+            
+            <div className="no-print" style={{ display: 'flex', gap: '10px', marginTop: '25px' }}>
+              <button onClick={() => setSesiTerpilih(null)} className="btn" style={{ flex: 1, backgroundColor: '#e5e7eb', color: '#374151' }}>Tutup</button>
+              <button onClick={handleCetakPDF} className="btn btn-primary" style={{ flex: 1, backgroundColor: '#2b50c7' }}>🖨️ Cetak Struk</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- KEAJAIBAN CSS: TABEL MOBILE & PDF THERMAL PRINTER --- */}
       <style>{`
-        @media print {
-          body { background-color: white; margin: 0; padding: 20px; }
-          .no-print { display: none !important; }
-          .card { box-shadow: none; padding: 0; }
-          .print-only { display: block !important; margin-bottom: 20px; font-weight: bold; }
+        /* 1. TAMPILAN KARTU DI MOBILE (Responsif) */
+        @media (max-width: 600px) {
+          .responsive-table thead { display: none; }
+          .responsive-table, .responsive-table tbody, .responsive-table tr, .responsive-table td { display: block; width: 100%; }
+          .responsive-table tr { 
+            margin-bottom: 15px; background-color: white; border: 1px solid #e5e7eb; 
+            border-radius: 12px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+          }
+          .responsive-table td { 
+            display: flex; justify-content: space-between; align-items: center; 
+            text-align: right; border-bottom: 1px solid #f3f4f6; padding: 10px 0; 
+          }
+          .responsive-table td:last-child { border-bottom: none; padding-bottom: 0; }
+          .responsive-table td::before { 
+            content: attr(data-label); font-weight: normal; color: #6b7280; text-align: left; 
+          }
         }
-        .print-only { display: none; }
+
+        /* 2. TAMPILAN KERTAS THERMAL PRINTER (PDF) */
+        @media print {
+          @page { margin: 0; size: 80mm auto; } /* Memaksa ukuran kertas struk kasir 80mm */
+          body { 
+            background-color: white; margin: 0; padding: 5mm; 
+            font-family: 'Courier New', Courier, monospace; /* Font khas mesin kasir */
+            font-size: 11px; color: black; 
+          }
+          .no-print { display: none !important; }
+          .card { box-shadow: none; border: none; padding: 0; margin: 0; }
+          .print-only { display: block !important; }
+          .print-only-img { display: inline-block !important; }
+
+          /* Trik Cerdas: Jika Modal Struk Sedang Terbuka, PDF Hanya Mencetak Modal Saja */
+          .modal-terbuka .laporan-utama { display: none !important; }
+          .modal-terbuka .modal-overlay { position: static !important; background: white !important; padding: 0 !important; }
+          .modal-terbuka .modal-content { max-width: 100% !important; max-height: none !important; overflow: visible !important; }
+
+          /* Mengubah Tabel Riwayat menjadi Format Struk jika dicetak utuh */
+          .responsive-table th, .responsive-table td { 
+            font-size: 10px; padding: 4px 2px !important; border-bottom: 1px dashed black !important; 
+          }
+          .responsive-table thead tr { border-bottom: 2px dashed black !important; }
+        }
+        .print-only, .print-only-img { display: none; }
       `}</style>
     </div>
   );
