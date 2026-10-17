@@ -11,7 +11,8 @@ export default function Dashboard() {
 
   // --- 1. GLOBAL STATE (Disinkronkan dengan Database) ---
     const [saldoEndapan, setSaldoEndapan] = useState(0);
-    const [isLoadingSaldo, setIsLoadingSaldo] = useState(true); // (BARU) Indikator loading saldo
+    const [isLoadingSaldo, setIsLoadingSaldo] = useState(true);
+    const [showSaldo, setShowSaldo] = useState(false); // <--- (BARU) Sensor Saldo // (BARU) Indikator loading saldo
 
   // (BARU) Menarik saldo terakhir dari Database saat pertama kali buka
     useEffect(() => {
@@ -167,13 +168,28 @@ export default function Dashboard() {
         </button>
     </div>
 
-      {/* KARTU ENDAPAN GLOBAL */}
-    <div className="card-highlight">
+    {/* KARTU ENDAPAN GLOBAL */}
+      <div className="card-highlight">
         <h2 style={{ fontSize: '16px', fontWeight: 'normal', margin: 0 }}>Total Saldo Endapan Saat Ini</h2>
-        <div style={{ fontSize: '32px', fontWeight: 'bold', marginTop: '5px' }}>
-        {isLoadingSaldo ? '⏳ Sedang sinkronisasi...' : `Rp ${saldoEndapan.toLocaleString('id-ID')}`}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '5px' }}>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
+            {isLoadingSaldo 
+              ? '⏳ ...' 
+              : showSaldo 
+                ? `Rp ${saldoEndapan.toLocaleString('id-ID')}` 
+                : 'Rp •••••••'
+            }
+          </div>
+          {/* Tombol Mata */}
+          <button 
+            onClick={() => setShowSaldo(!showSaldo)}
+            style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer', opacity: 0.8 }}
+            title={showSaldo ? "Sembunyikan Saldo" : "Tampilkan Saldo"}
+          >
+            {showSaldo ? '👁️' : '🙈'}
+          </button>
         </div>
-    </div>
+      </div>
     
       {/* ... pemanggilan komponen lain tetap sama persis ... */}
         <UrunanCard isCheatDay={isCheatDay} setIsCheatDay={setIsCheatDay} urunanCowok={urunanCowok} setUrunanCowok={setUrunanCowok} urunanCewek={urunanCewek} setUrunanCewek={setUrunanCewek} tanggalSesi={tanggalSesi} setTanggalSesi={setTanggalSesi} />
