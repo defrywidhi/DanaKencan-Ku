@@ -1,108 +1,124 @@
 // src/pages/Dashboard.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import UrunanCard from '../components/UrunanCard';
 import PengeluaranCard from '../components/PengeluaranCard';
 import RingkasanCard from '../components/RingkasanCard';
-import Swal from 'sweetalert2';
 
 export default function Dashboard() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
   // --- 1. GLOBAL STATE (Disinkronkan dengan Database) ---
-    const [saldoEndapan, setSaldoEndapan] = useState(0);
-    const [isLoadingSaldo, setIsLoadingSaldo] = useState(true);
-    const [showSaldo, setShowSaldo] = useState(false); // <--- (BARU) Sensor Saldo // (BARU) Indikator loading saldo
+  const [saldoEndapan, setSaldoEndapan] = useState(0);
+  const [isLoadingSaldo, setIsLoadingSaldo] = useState(true);
+  const [showSaldo, setShowSaldo] = useState(false);
 
-  // (BARU) Menarik saldo terakhir dari Database saat pertama kali buka
-    useEffect(() => {
+  useEffect(() => {
     const fetchSaldoDariDatabase = async () => {
-    try {
+      try {
         const response = await fetch(import.meta.env.VITE_API_URL);
         const result = await response.json();
         
         if (result.status === "sukses" && result.data.length > 0) {
-          // Ambil baris terakhir dari data yang dikirim Apps Script
-        const sesiTerakhir = result.data[result.data.length - 1];
-          // Set saldo berdasarkan kolom 'Saldo Endapan Akhir'
-        const saldoAsli = Number(sesiTerakhir['Saldo Endapan Akhir']);
-        setSaldoEndapan(saldoAsli);
-        
-          // Simpan juga ke local storage sebagai backup offline
-        localStorage.setItem('SALDO_ENDAPAN', saldoAsli);
+          const sesiTerakhir = result.data[result.data.length - 1];
+          const saldoAsli = Number(sesiTerakhir['Saldo Endapan Akhir']);
+          setSaldoEndapan(saldoAsli);
+          localStorage.setItem('SALDO_ENDAPAN', saldoAsli);
         } else if (result.data.length === 0) {
-          // Jika database masih kosong murni
-        setSaldoEndapan(0);
+          setSaldoEndapan(0);
         }
-        } catch (error) {
+      } catch (error) {
         console.error("Gagal menarik data dari server:", error);
-        // Fallback: Jika internet mati/error, pakai sisa memori di HP
         const saldoBackup = localStorage.getItem('SALDO_ENDAPAN');
         if (saldoBackup) setSaldoEndapan(Number(saldoBackup));
-        } finally {
+      } finally {
         setIsLoadingSaldo(false);
-        }
+      }
     };
 
     fetchSaldoDariDatabase();
-  }, []); // Array kosong = hanya berjalan sekali saat buka web
+  }, []);
 
-  // --- 2. LOCAL STATE ---
-    const [urunanCowok, setUrunanCowok] = useState(0);
-    const [urunanCewek, setUrunanCewek] = useState(0);
-    const [isCheatDay, setIsCheatDay] = useState(false); 
-    const [pengeluaran, setPengeluaran] = useState([]);
-    const [isSaving, setIsSaving] = useState(false);
+  // --- 2. LOCAL STATE (SISTEM DRAFT LOCALSTORAGE) ---
+  // Kita baca dari memori HP. Kalau kosong, pakai nilai bawaan.
+  const [urunanCowok, setUrunanCowok] = useState(() => {
+    const draft = localStorage.getItem('DRAFT_COWOK');
+    return draft ? Number(draft) : 0;
+  });
 
-    // (BARU) State Tanggal (Bawaan: Tanggal Hari Ini dengan format YYYY-MM-DD)
-    const [tanggalSesi, setTanggalSesi] = useState(() => {
-      const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-      return (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
-    });
+  const [urunanCewek, setUrunanCewek] = useState(() => {
+    const draft = localStorage.getItem('DRAFT_CEWEK');
+    return draft ? Number(draft) : 0;
+  });
 
-  // --- 3. DERIVED STATE (Perhitungan Otomatis) ---
-    const totalUrunan = urunanCowok + urunanCewek;
-    const totalPengeluaran = pengeluaran.reduce((total, item) => total + item.harga, 0);
+  const [isCheatDay, setIsCheatDay] = useState(() => {
+    const draft = localStorage.getItem('DRAFT_CHEAT_DAY');
+    return draft === 'true';
+  });
 
-  // (DIUBAH) Logika 'Sisa Hari Ini' sekarang cerdas menyesuaikan mode
-    const sisaHariIni = isCheatDay 
+  const [pengeluaran, setPengeluaran] = useState(() => {
+    const draft = localStorage.getItem('DRAFT_PENGELUARAN');
+    return draft ? JSON.parse(draft) : [];
+  });
+
+  const [tanggalSesi, setTanggalSesi] = useState(() => {
+    const draft = localStorage.getItem('DRAFT_TANGGAL');
+    if (draft) return draft;
+    // Bawaan hari ini jika tidak ada draft
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+    return (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
+  });
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  // --- EFEK SAMPING: SIMPAN DRAFT OTOMATIS ---
+  // Setiap kali Anda mengetik, React diam-diam menyimpan ini ke HP Anda
+  useEffect(() => {
+    localStorage.setItem('DRAFT_COWOK', urunanCowok);
+    localStorage.setItem('DRAFT_CEWEK', urunanCewek);
+    localStorage.setItem('DRAFT_CHEAT_DAY', isCheatDay);
+    localStorage.setItem('DRAFT_PENGELUARAN', JSON.stringify(pengeluaran));
+    localStorage.setItem('DRAFT_TANGGAL', tanggalSesi);
+  }, [urunanCowok, urunanCewek, isCheatDay, pengeluaran, tanggalSesi]);
+
+
+  // --- 3. DERIVED STATE ---
+  const totalUrunan = urunanCowok + urunanCewek;
+  const totalPengeluaran = pengeluaran.reduce((total, item) => total + item.harga, 0);
+  
+  const sisaHariIni = isCheatDay 
     ? (saldoEndapan + totalUrunan) - totalPengeluaran 
     : totalUrunan - totalPengeluaran;
 
-  // (DIUBAH) Saldo akhir mengikuti logika sisa hari ini
-    const proyeksiSaldoAkhir = isCheatDay 
-    ? sisaHariIni // Di Cheat Day, sisa uang gabungan otomatis menjadi saldo akhir baru
-    : saldoEndapan + sisaHariIni; // Di Normal, endapan lama ditambah sisa/defisit hari ini
+  const proyeksiSaldoAkhir = isCheatDay ? sisaHariIni : saldoEndapan + sisaHariIni;
 
-    const ringkasanKategori = pengeluaran.reduce((acc, item) => {
+  const ringkasanKategori = pengeluaran.reduce((acc, item) => {
     if (!acc[item.kategori]) acc[item.kategori] = 0;
     acc[item.kategori] += item.harga;
     return acc;
-    }, {});
+  }, {});
 
-    // --- 4. FUNGSI AKSI ---
-    const handleTambahPengeluaran = (itemBaru) => {
-        setPengeluaran([...pengeluaran, itemBaru]);
-    };
+  // --- 4. FUNGSI AKSI ---
+  const handleTambahPengeluaran = (itemBaru) => {
+    setPengeluaran([...pengeluaran, itemBaru]);
+  };
 
-    // (BARU) Fungsi untuk menghapus item dari daftar sementara sebelum disimpan
-    const handleHapusPengeluaranLokal = (idItemYangMauDihapus) => {
-        // Memfilter array: Ambil semua item yang ID-nya TIDAK SAMA dengan ID yang mau dihapus
+  const handleHapusPengeluaranLokal = (idItemYangMauDihapus) => {
     const pengeluaranBaru = pengeluaran.filter(item => item.id !== idItemYangMauDihapus);
-        setPengeluaran(pengeluaranBaru);
-    };
+    setPengeluaran(pengeluaranBaru);
+  };
 
-    const handleTutupSesi = async () => {
-    // (DIUBAH) Menggunakan SweetAlert untuk Konfirmasi
+  const handleTutupSesi = async () => {
     const konfirmasi = await Swal.fire({
-    title: 'Tutup Sesi Hari Ini?',
-    text: "Sisa uang akan dimasukkan ke Saldo Endapan dan data akan disimpan ke Database.",
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#10b981',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: 'Ya, Tutup & Simpan!',
-    cancelButtonText: 'Batal'
+      title: 'Tutup Sesi Hari Ini?',
+      text: "Sisa uang akan dimasukkan ke Saldo Endapan dan data akan disimpan ke Database.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Ya, Tutup & Simpan!',
+      cancelButtonText: 'Batal'
     });
 
     if (!konfirmasi.isConfirmed) return; 
@@ -111,73 +127,79 @@ export default function Dashboard() {
     const idSesiUnik = `SESI-${Date.now()}`;
 
     const payloadData = {
-    action: "simpan",
-    idSesi: idSesiUnik,
-    tanggalSesi: tanggalSesi,
-    isCheatDay: isCheatDay,
-    saldoEndapanAwal: saldoEndapan,
-    urunanCowok: urunanCowok,
-    urunanCewek: urunanCewek,
-    totalPengeluaran: totalPengeluaran,
-    sisaHariIni: sisaHariIni,
-    saldoEndapanBaru: proyeksiSaldoAkhir,
-    pengeluaran: pengeluaran
+      action: "simpan",
+      idSesi: idSesiUnik,
+      tanggalSesi: tanggalSesi,
+      isCheatDay: isCheatDay,
+      saldoEndapanAwal: saldoEndapan,
+      urunanCowok: urunanCowok,
+      urunanCewek: urunanCewek,
+      totalPengeluaran: totalPengeluaran,
+      sisaHariIni: sisaHariIni,
+      saldoEndapanBaru: proyeksiSaldoAkhir,
+      pengeluaran: pengeluaran
     };
 
     try {
-    const response = await fetch(import.meta.env.VITE_API_URL, {
+      const response = await fetch(import.meta.env.VITE_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payloadData)
-    });
+        body: JSON.stringify(payloadData),
+        redirect: "follow"
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (result.status === "sukses") {
+      if (result.status === "sukses") {
         setSaldoEndapan(proyeksiSaldoAkhir);
         setUrunanCowok(0);
         setUrunanCewek(0);
         setPengeluaran([]);
         setIsCheatDay(false);
-        // (DIUBAH) Pemberitahuan Sukses
+        
+        // (BARU) BERSIHKAN DRAFT KARENA SUDAH SUKSES TERKIRIM
+        localStorage.removeItem('DRAFT_COWOK');
+        localStorage.removeItem('DRAFT_CEWEK');
+        localStorage.removeItem('DRAFT_CHEAT_DAY');
+        localStorage.removeItem('DRAFT_PENGELUARAN');
+        localStorage.removeItem('DRAFT_TANGGAL');
+
         Swal.fire('Berhasil!', 'Data kencan berhasil disimpan ke Database.', 'success');
-    } else {
-        // (DIUBAH) Pemberitahuan Gagal
+      } else {
         Swal.fire('Gagal!', 'Tidak dapat menyimpan: ' + result.pesan, 'error');
-    }
+      }
     } catch (error) {
-    console.error(error);
-    Swal.fire('Error Jaringan', 'Periksa koneksi internet Anda.', 'error');
+      console.error(error);
+      Swal.fire('Error Jaringan', 'Periksa koneksi internet Anda.', 'error');
     } finally {
-    setIsSaving(false);
+      setIsSaving(false);
     }
-};
+  };
 
   // --- 5. TAMPILAN (UI) ---
-  // Bagian bawah src/App.jsx
-    return (
+  return (
     <div className="app-container">
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <h1>Dana Kencan 💸</h1>
         <button 
-        onClick={() => navigate('/riwayat')}
-        className="btn" 
-        style={{ backgroundColor: '#4b5563', color: 'white', padding: '8px 12px', fontSize: '14px' }}
+          onClick={() => navigate('/riwayat')}
+          className="btn" 
+          style={{ backgroundColor: '#4b5563', color: 'white', padding: '8px 12px', fontSize: '14px' }}
         >
-        📄 Lihat Riwayat
+          📄 Lihat Riwayat
         </button>
-    </div>
+      </div>
 
-    {/* KARTU ENDAPAN GLOBAL */}
+      {/* KARTU ENDAPAN GLOBAL */}
       <div className="card-highlight">
         <h2 style={{ fontSize: '16px', fontWeight: 'normal', margin: 0 }}>Total Saldo Endapan Saat Ini</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '5px' }}>
           <div style={{ fontSize: '32px', fontWeight: 'bold' }}>
             {isLoadingSaldo 
-              ? '⏳ ...' 
+                ? '⏳loading...' 
               : showSaldo 
                 ? `Rp ${saldoEndapan.toLocaleString('id-ID')}` 
-                : 'Rp •••••••'
+                : 'Rp ••••••'
             }
           </div>
           {/* Tombol Mata */}
@@ -190,11 +212,31 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
-    
-      {/* ... pemanggilan komponen lain tetap sama persis ... */}
-        <UrunanCard isCheatDay={isCheatDay} setIsCheatDay={setIsCheatDay} urunanCowok={urunanCowok} setUrunanCowok={setUrunanCowok} urunanCewek={urunanCewek} setUrunanCewek={setUrunanCewek} tanggalSesi={tanggalSesi} setTanggalSesi={setTanggalSesi} />
-        <PengeluaranCard pengeluaran={pengeluaran} onTambahPengeluaran={handleTambahPengeluaran} onHapusPengeluaran={handleHapusPengeluaranLokal} />
-        <RingkasanCard totalUrunan={totalUrunan} totalPengeluaran={totalPengeluaran} sisaHariIni={sisaHariIni} proyeksiSaldoAkhir={proyeksiSaldoAkhir} isCheatDay={isCheatDay} saldoEndapan={saldoEndapan} ringkasanKategori={ringkasanKategori} onTutupSesi={handleTutupSesi} isSaving={isSaving} />
+      
+      <UrunanCard 
+        isCheatDay={isCheatDay} setIsCheatDay={setIsCheatDay}
+        urunanCowok={urunanCowok} setUrunanCowok={setUrunanCowok}
+        urunanCewek={urunanCewek} setUrunanCewek={setUrunanCewek}
+        tanggalSesi={tanggalSesi} setTanggalSesi={setTanggalSesi}
+      />
+
+      <PengeluaranCard 
+        pengeluaran={pengeluaran} 
+        onTambahPengeluaran={handleTambahPengeluaran} 
+        onHapusPengeluaran={handleHapusPengeluaranLokal}
+      />
+
+      <RingkasanCard 
+        totalUrunan={totalUrunan}
+        totalPengeluaran={totalPengeluaran}
+        sisaHariIni={sisaHariIni}
+        proyeksiSaldoAkhir={proyeksiSaldoAkhir}
+        isCheatDay={isCheatDay}
+        saldoEndapan={saldoEndapan}
+        ringkasanKategori={ringkasanKategori}
+        onTutupSesi={handleTutupSesi}
+        isSaving={isSaving}
+      />
     </div>
-    );
+  );
 }
