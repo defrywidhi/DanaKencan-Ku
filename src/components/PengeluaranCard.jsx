@@ -61,7 +61,7 @@ export default function PengeluaranCard({ pengeluaran, onTambahPengeluaran, onHa
               <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.kategori}</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <span style={{ fontWeight: '500' }}>Rp {item.harga.toLocaleString('id-ID')}</span>
+              <span className="nowrap" style={{ fontWeight: '500' }}>Rp {item.harga.toLocaleString('id-ID')}</span>
               <button onClick={() => onHapusPengeluaran(item.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px', padding: '5px' }}>❌</button>
             </div>
           </li>
