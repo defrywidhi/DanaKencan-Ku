@@ -7,6 +7,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Riwayat from './pages/Riwayat';
+import Statistik from './pages/Statistik';
 
 export default function App() {
   // State untuk mengecek apakah user sudah login (baca dari memori browser)
@@ -51,6 +52,16 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Riwayat />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Rute Analitik Statistik */}
+        <Route 
+          path="/statistik" 
+          element={
+            <ProtectedRoute>
+              <Statistik />
             </ProtectedRoute>
           } 
         />

@@ -192,13 +192,24 @@ export default function Dashboard() {
     <div className="app-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <h1>Dana Kencan 💸</h1>
-        <button 
-          onClick={() => navigate('/riwayat')}
-          className="btn" 
-          style={{ backgroundColor: '#4b5563', color: 'white', padding: '8px 12px', fontSize: '14px' }}
-        >
-          📄 Lihat Riwayat
-        </button>
+        
+        {/* (DIUBAH) Memecah tombol menjadi dua baris/kolom kecil agar muat */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            onClick={() => navigate('/statistik')}
+            className="btn" 
+            style={{ backgroundColor: '#2b50c7', color: 'white', padding: '8px 10px', fontSize: '14px' }}
+          >
+            📊 Stat
+          </button>
+          <button 
+            onClick={() => navigate('/riwayat')}
+            className="btn" 
+            style={{ backgroundColor: '#4b5563', color: 'white', padding: '8px 10px', fontSize: '14px' }}
+          >
+            📄 Riwayat
+          </button>
+        </div>
       </div>
 
       {/* KARTU ENDAPAN GLOBAL */}
