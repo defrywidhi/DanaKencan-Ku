@@ -62,12 +62,16 @@ export default function Dashboard() {
     return draft ? JSON.parse(draft) : [];
   });
 
+  // --- (BARU) Fungsi Helper untuk mendapatkan tanggal hari ini ---
+  const getTanggalHariIni = () => {
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+    return (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
+  };
+
   const [tanggalSesi, setTanggalSesi] = useState(() => {
     const draft = localStorage.getItem('DRAFT_TANGGAL');
     if (draft) return draft;
-    // Bawaan hari ini jika tidak ada draft
-    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-    return (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
+    return getTanggalHariIni(); // Memanggil fungsi helper
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -168,13 +172,16 @@ export default function Dashboard() {
           setPengeluaran([]);
           setIsCheatDay(false);
           
+          // --- (BARU) Kembalikan tanggal ke hari ini ---
+          setTanggalSesi(getTanggalHariIni()); 
+          
+          // Bersihkan Draft
           localStorage.removeItem('DRAFT_COWOK');
           localStorage.removeItem('DRAFT_CEWEK');
           localStorage.removeItem('DRAFT_CHEAT_DAY');
           localStorage.removeItem('DRAFT_PENGELUARAN');
           localStorage.removeItem('DRAFT_TANGGAL');
 
-          // (DIUBAH) Loading sukses akan menimpa animasi loading sebelumnya
           Swal.fire('Berhasil!', 'Data kencan berhasil disimpan ke Database.', 'success');
         } else {
           Swal.fire('Gagal!', 'Tidak dapat menyimpan: ' + result.pesan, 'error');
