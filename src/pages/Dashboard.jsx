@@ -77,13 +77,23 @@ export default function Dashboard() {
   const [isSaving, setIsSaving] = useState(false);
 
   // --- EFEK SAMPING: SIMPAN DRAFT OTOMATIS ---
-  // Setiap kali Anda mengetik, React diam-diam menyimpan ini ke HP Anda
   useEffect(() => {
-    localStorage.setItem('DRAFT_COWOK', urunanCowok);
-    localStorage.setItem('DRAFT_CEWEK', urunanCewek);
-    localStorage.setItem('DRAFT_CHEAT_DAY', isCheatDay);
-    localStorage.setItem('DRAFT_PENGELUARAN', JSON.stringify(pengeluaran));
-    localStorage.setItem('DRAFT_TANGGAL', tanggalSesi);
+    // Logika Cerdas: Jika semua form kosong, ini berarti form baru saja di-reset atau belum diisi.
+    // Maka, kita harus membersihkan draft agar besok tanggalnya bisa otomatis mengikuti hari baru.
+    if (urunanCowok === 0 && urunanCewek === 0 && pengeluaran.length === 0 && !isCheatDay) {
+      localStorage.removeItem('DRAFT_COWOK');
+      localStorage.removeItem('DRAFT_CEWEK');
+      localStorage.removeItem('DRAFT_CHEAT_DAY');
+      localStorage.removeItem('DRAFT_PENGELUARAN');
+      localStorage.removeItem('DRAFT_TANGGAL');
+    } else {
+      // Jika ada satu saja form yang diisi, simpan semuanya sebagai draft
+      localStorage.setItem('DRAFT_COWOK', urunanCowok);
+      localStorage.setItem('DRAFT_CEWEK', urunanCewek);
+      localStorage.setItem('DRAFT_CHEAT_DAY', isCheatDay);
+      localStorage.setItem('DRAFT_PENGELUARAN', JSON.stringify(pengeluaran));
+      localStorage.setItem('DRAFT_TANGGAL', tanggalSesi);
+    }
   }, [urunanCowok, urunanCewek, isCheatDay, pengeluaran, tanggalSesi]);
 
 
@@ -174,13 +184,6 @@ export default function Dashboard() {
           
           // --- (BARU) Kembalikan tanggal ke hari ini ---
           setTanggalSesi(getTanggalHariIni()); 
-          
-          // Bersihkan Draft
-          localStorage.removeItem('DRAFT_COWOK');
-          localStorage.removeItem('DRAFT_CEWEK');
-          localStorage.removeItem('DRAFT_CHEAT_DAY');
-          localStorage.removeItem('DRAFT_PENGELUARAN');
-          localStorage.removeItem('DRAFT_TANGGAL');
 
           Swal.fire('Berhasil!', 'Data kencan berhasil disimpan ke Database.', 'success');
         } else {
